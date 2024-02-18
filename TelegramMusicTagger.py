@@ -1,6 +1,4 @@
-# -*- coding: cp1251 -*-
-
-from telebot.async_telebot import AsyncTeleBot
+п»їfrom telebot.async_telebot import AsyncTeleBot
 from telebot.types import InputMedia, InputMediaPhoto, Message, InputMediaAudio
 from telebot.asyncio_handler_backends import State, StatesGroup
 from telebot.asyncio_storage import StateMemoryStorage
@@ -27,17 +25,17 @@ class MyStates(StatesGroup):
     song = State()
     audios = State()
 
-# TODO Сделать одну команду для set и reset
-# Добавить установщики/сбрасыватели всех настроек
+# TODO РЎРґРµР»Р°С‚СЊ РѕРґРЅСѓ РєРѕРјР°РЅРґСѓ РґР»СЏ set Рё reset
+# Р”РѕР±Р°РІРёС‚СЊ СѓСЃС‚Р°РЅРѕРІС‰РёРєРё/СЃР±СЂР°СЃС‹РІР°С‚РµР»Рё РІСЃРµС… РЅР°СЃС‚СЂРѕРµРє
 
 @bot.message_handler(commands='setcover')
 async def handle_setcover(message: Message):
     await bot.set_state(message.from_user.id, MyStates.cover, message.chat.id)
-    await bot.reply_to(message, "Пришлите фото обложки")
+    await bot.reply_to(message, "РџСЂРёС€Р»РёС‚Рµ С„РѕС‚Рѕ РѕР±Р»РѕР¶РєРё")
 
 @bot.message_handler(state=MyStates.cover,content_types='photo')
 async def set_cover(message: Message):
-    # TODO стирка изображений по таймеру
+    # TODO СЃС‚РёСЂРєР° РёР·РѕР±СЂР°Р¶РµРЅРёР№ РїРѕ С‚Р°Р№РјРµСЂСѓ
     big_file_info    = await bot.get_file(message.photo[-1].file_id)
     little_file_info = await bot.get_file(message.photo[0].file_id)
     async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
@@ -45,13 +43,13 @@ async def set_cover(message: Message):
         data['cover_id']  = big_file_info.file_id
         data['thumbnail'] = await bot.download_file(little_file_info.file_path)
 
-    await bot.reply_to(message, "Обложка сохранена")
+    await bot.reply_to(message, "РћР±Р»РѕР¶РєР° СЃРѕС…СЂР°РЅРµРЅР°")
     await bot.set_state(message.from_user.id, "*", message.chat.id)
 
 @bot.message_handler(state=MyStates.cover)
 async def set_cover_incorrect(message: Message):
-    # TODO добавь кнопку отмены т.е. await bot.set_state(message.from_user.id, "*", message.chat.id)
-    await bot.reply_to(message, "Пришлите фото обложки, а не что то другое")
+    # TODO РґРѕР±Р°РІСЊ РєРЅРѕРїРєСѓ РѕС‚РјРµРЅС‹ С‚.Рµ. await bot.set_state(message.from_user.id, "*", message.chat.id)
+    await bot.reply_to(message, "РџСЂРёС€Р»РёС‚Рµ С„РѕС‚Рѕ РѕР±Р»РѕР¶РєРё, Р° РЅРµ С‡С‚Рѕ С‚Рѕ РґСЂСѓРіРѕРµ")
 
 @bot.message_handler(commands='resetcover')
 async def reset_cover(message: Message):
@@ -60,48 +58,48 @@ async def reset_cover(message: Message):
             data['cover']     = None
             data['cover_id']  = None
             data['thumbnail'] = None
-    await bot.reply_to(message, "Удалено")
+    await bot.reply_to(message, "РЈРґР°Р»РµРЅРѕ")
 
 @bot.message_handler(commands='sendcover')
 async def handle_sendcover(message):
-    # TODO обработка ситуации когда еще не было set_state
+    # TODO РѕР±СЂР°Р±РѕС‚РєР° СЃРёС‚СѓР°С†РёРё РєРѕРіРґР° РµС‰Рµ РЅРµ Р±С‹Р»Рѕ set_state
     async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         cover_id = data.get('cover_id')
     if cover_id:
         await bot.send_photo(message.chat.id, cover_id)
     else:
-        await bot.reply_to(message, "Обложка не задана")
+        await bot.reply_to(message, "РћР±Р»РѕР¶РєР° РЅРµ Р·Р°РґР°РЅР°")
 
 
 
 @bot.message_handler(commands='setmusician')
 async def handle_setmusician(message: Message):
-    await bot.reply_to(message, "Введите исполнителя")
+    await bot.reply_to(message, "Р’РІРµРґРёС‚Рµ РёСЃРїРѕР»РЅРёС‚РµР»СЏ")
     await bot.set_state(message.from_user.id, MyStates.musician, message.chat.id)
 
 @bot.message_handler(state=MyStates.musician)
 async def set_musician(message: Message):
-    # TODO добавь кнопку отмены т.е. await bot.set_state(message.from_user.id, "*", message.chat.id)
+    # TODO РґРѕР±Р°РІСЊ РєРЅРѕРїРєСѓ РѕС‚РјРµРЅС‹ С‚.Рµ. await bot.set_state(message.from_user.id, "*", message.chat.id)
     if message.content_type == 'text':
         async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['musician'] = message.text
         await bot.set_state(message.from_user.id, "*", message.chat.id)
-        await bot.reply_to(message, "Cохранено")
+        await bot.reply_to(message, "CРѕС…СЂР°РЅРµРЅРѕ")
     else:
-        await bot.reply_to(message, "Введите имя исполнителя, а не что то другое")
+        await bot.reply_to(message, "Р’РІРµРґРёС‚Рµ РёРјСЏ РёСЃРїРѕР»РЅРёС‚РµР»СЏ, Р° РЅРµ С‡С‚Рѕ С‚Рѕ РґСЂСѓРіРѕРµ")
 
 @bot.message_handler(commands='resetmusician')
 async def reset_musician(message: Message):
     await bot.set_state(message.from_user.id, "*", message.chat.id)
     async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['musician'] = None
-    await bot.reply_to(message, "Удалено")
+    await bot.reply_to(message, "РЈРґР°Р»РµРЅРѕ")
 
 
 
 @bot.message_handler(commands='renamenext')
 async def handle_setnext(message: Message):
-    await bot.reply_to(message, "Введите название композиции")
+    await bot.reply_to(message, "Р’РІРµРґРёС‚Рµ РЅР°Р·РІР°РЅРёРµ РєРѕРјРїРѕР·РёС†РёРё")
     await bot.set_state(message.from_user.id, MyStates.song, message.chat.id)
 
 @bot.message_handler(state=MyStates.song)
@@ -110,16 +108,16 @@ async def set_next(message: Message):
         async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['song'] = message.text
         await bot.set_state(message.from_user.id, "*", message.chat.id)
-        await bot.reply_to(message, "а теперь саму композицию")
+        await bot.reply_to(message, "Р° С‚РµРїРµСЂСЊ СЃР°РјСѓ РєРѕРјРїРѕР·РёС†РёСЋ")
     else:
-        await bot.reply_to(message, "Введите название композиции, а не что то другое")
+        await bot.reply_to(message, "Р’РІРµРґРёС‚Рµ РЅР°Р·РІР°РЅРёРµ РєРѕРјРїРѕР·РёС†РёРё, Р° РЅРµ С‡С‚Рѕ С‚Рѕ РґСЂСѓРіРѕРµ")
 
    
  
 @bot.message_handler(content_types='audio')
 async def handle_audio(message: Message):
-    # TODO учет последовательности (можно добавить опцию для контроля, взамен скорость)
-    # добавить сообщение которое будет говорить о загрузке /-\|/-\|
+    # TODO СѓС‡РµС‚ РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚Рё (РјРѕР¶РЅРѕ РґРѕР±Р°РІРёС‚СЊ РѕРїС†РёСЋ РґР»СЏ РєРѕРЅС‚СЂРѕР»СЏ, РІР·Р°РјРµРЅ СЃРєРѕСЂРѕСЃС‚СЊ)
+    # РґРѕР±Р°РІРёС‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ РєРѕС‚РѕСЂРѕРµ Р±СѓРґРµС‚ РіРѕРІРѕСЂРёС‚СЊ Рѕ Р·Р°РіСЂСѓР·РєРµ /-\|/-\|
     await bot.set_state(message.from_user.id, "*", message.chat.id)
     async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         cover          = data.get('cover')
@@ -127,13 +125,13 @@ async def handle_audio(message: Message):
         musician       = data.get('musician')
         composer       = data.get('composer')
         album          = data.get('album')
-        # TODO параметр автонумерации треков
-        track_number   = data.get('track_number')   # номер трека в альбоме
-        released       = data.get('released')       # год выпуска
+        # TODO РїР°СЂР°РјРµС‚СЂ Р°РІС‚РѕРЅСѓРјРµСЂР°С†РёРё С‚СЂРµРєРѕРІ
+        track_number   = data.get('track_number')   # РЅРѕРјРµСЂ С‚СЂРµРєР° РІ Р°Р»СЊР±РѕРјРµ
+        released       = data.get('released')       # РіРѕРґ РІС‹РїСѓСЃРєР°
         lyrics         = data.get('lyrics')
         genre          = data.get('genre')
-        digits_in_song = data.get('digits_in_song') # может ли начало трека содержать число
-        send_in_quque  = data.get('send_in_quque')  # отсылать в том же порядке что и присланы
+        digits_in_song = data.get('digits_in_song') # РјРѕР¶РµС‚ Р»Рё РЅР°С‡Р°Р»Рѕ С‚СЂРµРєР° СЃРѕРґРµСЂР¶Р°С‚СЊ С‡РёСЃР»Рѕ
+        send_in_quque  = data.get('send_in_quque')  # РѕС‚СЃС‹Р»Р°С‚СЊ РІ С‚РѕРј Р¶Рµ РїРѕСЂСЏРґРєРµ С‡С‚Рѕ Рё РїСЂРёСЃР»Р°РЅС‹
         song           = data.get('song')
         if song: data['song'] = None
     
@@ -150,9 +148,9 @@ async def handle_audio(message: Message):
     
     bs = '\\'
     
-    # Проверяем наличие тегов в формате ID3
+    # РџСЂРѕРІРµСЂСЏРµРј РЅР°Р»РёС‡РёРµ С‚РµРіРѕРІ РІ С„РѕСЂРјР°С‚Рµ ID3
     if file_beginning == b'ID3':
-        # Читаем теги файла
+        # Р§РёС‚Р°РµРј С‚РµРіРё С„Р°Р№Р»Р°
         tags = ID3(downloaded_file)
     
         musician_ = tags.getall('TPE1')+tags.getall('TPE2'); musician_ = musician_[0].text[0] if musician_ else None
@@ -164,7 +162,7 @@ async def handle_audio(message: Message):
         #lyrics_ TXXX SYLT USLT TSST TIT3
 
         song_ = tags.getall('TIT2');                         song_ = song_[0].text[0] if song_ else None
-        # В названии может быть указан номер трека
+        # Р’ РЅР°Р·РІР°РЅРёРё РјРѕР¶РµС‚ Р±С‹С‚СЊ СѓРєР°Р·Р°РЅ РЅРѕРјРµСЂ С‚СЂРµРєР°
         track_number = track_number if track_number else track_number_
         if not digits_in_song:
             pattern = rf"^\s*0?({track_number if track_number else bs+'d*'})\s*(.*)\s*$"
@@ -189,7 +187,7 @@ async def handle_audio(message: Message):
     if  (not musician) and (not song):
         # _<musician>_-_<track_number>_<song>_
         # _<musician>_-_<song>_
-        # Первое тире будет разделителем
+        # РџРµСЂРІРѕРµ С‚РёСЂРµ Р±СѓРґРµС‚ СЂР°Р·РґРµР»РёС‚РµР»РµРј
         if not digits_in_song: pattern = r"^\s*(.*?)\s*-\s*0?(\d*)\s*(.*)\s*$"
         else:                  pattern = r"^\s*(.*?)\s*-\s*(.*)\s*$"
         
@@ -198,20 +196,20 @@ async def handle_audio(message: Message):
             if not digits_in_song: musician, track_number, song = match.groups()
             else:                  musician, song = match.groups()
         else:
-            # нельзя расчленить название, причем обе части неизвестны
-            await bot.reply_to(message, "Установите исполнителя или отправьте файл с названием вида: <Исполнитель> - <Композиция>. Если в одной из частей есть '-' то установите исполнителя или комопзицию в ручную")
+            # РЅРµР»СЊР·СЏ СЂР°СЃС‡Р»РµРЅРёС‚СЊ РЅР°Р·РІР°РЅРёРµ, РїСЂРёС‡РµРј РѕР±Рµ С‡Р°СЃС‚Рё РЅРµРёР·РІРµСЃС‚РЅС‹
+            await bot.reply_to(message, "РЈСЃС‚Р°РЅРѕРІРёС‚Рµ РёСЃРїРѕР»РЅРёС‚РµР»СЏ РёР»Рё РѕС‚РїСЂР°РІСЊС‚Рµ С„Р°Р№Р» СЃ РЅР°Р·РІР°РЅРёРµРј РІРёРґР°: <РСЃРїРѕР»РЅРёС‚РµР»СЊ> - <РљРѕРјРїРѕР·РёС†РёСЏ>. Р•СЃР»Рё РІ РѕРґРЅРѕР№ РёР· С‡Р°СЃС‚РµР№ РµСЃС‚СЊ '-' С‚Рѕ СѓСЃС‚Р°РЅРѕРІРёС‚Рµ РёСЃРїРѕР»РЅРёС‚РµР»СЏ РёР»Рё РєРѕРјРѕРїР·РёС†РёСЋ РІ СЂСѓС‡РЅСѓСЋ")
             return
     
     elif (musician or song) and not (musician and song):
-        # через название файла и извеcтную часть ищем неизвестную вторую часть
+        # С‡РµСЂРµР· РЅР°Р·РІР°РЅРёРµ С„Р°Р№Р»Р° Рё РёР·РІРµcС‚РЅСѓСЋ С‡Р°СЃС‚СЊ РёС‰РµРј РЅРµРёР·РІРµСЃС‚РЅСѓСЋ РІС‚РѕСЂСѓСЋ С‡Р°СЃС‚СЊ
         if not digits_in_song:
-            # _<musician>_-_<album_track_number>_<song>_ или _<musician>_<album_track_number>_<song>_
-            # _<track_number>_<song>_-_<musician>_ или _<track_number>_<song>_<musician>_
+            # _<musician>_-_<album_track_number>_<song>_ РёР»Рё _<musician>_<album_track_number>_<song>_
+            # _<track_number>_<song>_-_<musician>_ РёР»Рё _<track_number>_<song>_<musician>_
             pattern = rf"^\s*({musician if musician else '.*'})\s*-?\s*0?({track_number if track_number else bs+'d*'})\s*({song if song else '.*'})\s*$"
             reversed_pattern = rf"^\s*0?({track_number if track_number else bs+'d*'})\s*({song if song else '.*'})\s*-?\s*({musician if musician else '.*'})\s*$"
         else:
-            # _<musician>_-_<song>_ или _<musician>_<song>_
-            # _<song>_-_<musician>_ или _<song>_<musician>_
+            # _<musician>_-_<song>_ РёР»Рё _<musician>_<song>_
+            # _<song>_-_<musician>_ РёР»Рё _<song>_<musician>_
             pattern = rf"^\s*({musician if musician else '.*'})\s*-?\s*({song if song else '.*'})\s*$"
             reversed_pattern = rf"^\s*({song if song else '.*'})\s*-?\s*({musician if musician else '.*'})\s*$"
         
@@ -225,16 +223,16 @@ async def handle_audio(message: Message):
             else:                  song, musician  = match.groups()
             
         elif file_name.count('-') > 0:
-            # указываемое название не совпало с названием из файла
+            # СѓРєР°Р·С‹РІР°РµРјРѕРµ РЅР°Р·РІР°РЅРёРµ РЅРµ СЃРѕРІРїР°Р»Рѕ СЃ РЅР°Р·РІР°РЅРёРµРј РёР· С„Р°Р№Р»Р°
             m,s = file_name.split('-',1)
             musician = musician if musician else m.strip()
             song = song if song else s.strip()
         else:
-            # нельзя расчленить название, поэтому неизвестная часть будет целиком названием
+            # РЅРµР»СЊР·СЏ СЂР°СЃС‡Р»РµРЅРёС‚СЊ РЅР°Р·РІР°РЅРёРµ, РїРѕСЌС‚РѕРјСѓ РЅРµРёР·РІРµСЃС‚РЅР°СЏ С‡Р°СЃС‚СЊ Р±СѓРґРµС‚ С†РµР»РёРєРѕРј РЅР°Р·РІР°РЅРёРµРј
             musician = musician if musician else file_name.strip()
             song = song if song else file_name.strip()
     
-    # создадим новые теги на основе имеющихся данных и заменим ими предыдущие
+    # СЃРѕР·РґР°РґРёРј РЅРѕРІС‹Рµ С‚РµРіРё РЅР° РѕСЃРЅРѕРІРµ РёРјРµСЋС‰РёС…СЃСЏ РґР°РЅРЅС‹С… Рё Р·Р°РјРµРЅРёРј РёРјРё РїСЂРµРґС‹РґСѓС‰РёРµ
     tags = ID3()
     
     tags.add(TIT2(encoding=3, text=song))
@@ -250,8 +248,8 @@ async def handle_audio(message: Message):
     tags.save(downloaded_file)
     downloaded_file.seek(0)
     
-    #.!;%+^@$_ доступны при более чем ~40 символов, остальные схлопываются в _ как и пробелы
-    # или среднем количестве символов в слове > 6, а вообще ни то ни другое. хз как
+    #.!;%+^@$_ РґРѕСЃС‚СѓРїРЅС‹ РїСЂРё Р±РѕР»РµРµ С‡РµРј ~40 СЃРёРјРІРѕР»РѕРІ, РѕСЃС‚Р°Р»СЊРЅС‹Рµ СЃС…Р»РѕРїС‹РІР°СЋС‚СЃСЏ РІ _ РєР°Рє Рё РїСЂРѕР±РµР»С‹
+    # РёР»Рё СЃСЂРµРґРЅРµРј РєРѕР»РёС‡РµСЃС‚РІРµ СЃРёРјРІРѕР»РѕРІ РІ СЃР»РѕРІРµ > 6, Р° РІРѕРѕР±С‰Рµ РЅРё С‚Рѕ РЅРё РґСЂСѓРіРѕРµ. С…Р· РєР°Рє
     downloaded_file.name = f'{musician} - {song}.mp3'
     
     if send_in_quque:
