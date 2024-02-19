@@ -229,7 +229,7 @@ async def handle_audio(message: Message):
             else:                  musician_, song_                = match.groups()
         elif reversed_match:
             if not digits_in_song: track_number_, song_, musician_ = match.groups()
-            else:                  song_, musician_                = match.groups
+            else:                  song_, musician_                = match.groups()
             
         elif file_name.count('-') > 0:
             # указываемое название не совпало с названием из файла
