@@ -7,6 +7,7 @@ from telebot.types import InputFile
 
 from mutagen.id3 import ID3, TIT2, TPE1, TPE2, TALB, TRCK, APIC, TDRL, TORY, TXXX, TBPM, TEXT, TCOM, TCON #TDRS
 from PIL import Image
+from typing import Dict, List
 
 import io
 import os
@@ -16,8 +17,8 @@ from setting import TOKEN
 
 bot = AsyncTeleBot(TOKEN, state_storage=StateMemoryStorage())
 
-global message_quque
-message_quque = {}
+global message_queue
+message_queue: Dict[int, Dict[int, List[int]]] = {}
 
 class MyStates(StatesGroup):
     cover = State()
@@ -27,6 +28,7 @@ class MyStates(StatesGroup):
 
 # TODO Сделать одну команду для set и reset
 # Добавить установщики/сбрасыватели всех настроек
+# обработка ошибок
 
 @bot.message_handler(commands='setcover')
 async def handle_setcover(message: Message):
@@ -42,6 +44,7 @@ async def set_cover(message: Message):
         data['cover']     = await bot.download_file(big_file_info.file_path)
         data['cover_id']  = big_file_info.file_id
         data['thumbnail'] = await bot.download_file(little_file_info.file_path)
+        await bot.send_photo(message.chat.id, data['thumbnail'])
 
     await bot.reply_to(message, "Обложка сохранена")
     await bot.set_state(message.from_user.id, "*", message.chat.id)
@@ -112,7 +115,7 @@ async def set_next(message: Message):
     else:
         await bot.reply_to(message, "Введите название композиции, а не что то другое")
 
-   
+ 
  
 @bot.message_handler(content_types='audio')
 async def handle_audio(message: Message):
@@ -136,8 +139,9 @@ async def handle_audio(message: Message):
         if song: data['song'] = None
     
     if send_in_quque:
-        global message_quque; # {chat:{user:[message]}}
-        message_quque.setdefault(message.chat.id, {}).setdefault(message.from_user.id, []).append(message.id)
+        # {chat:{user:[message]}}
+        global message_queue
+        message_queue.setdefault(message.chat.id, {}).setdefault(message.from_user.id, []).append(message.id)
         
     file_name = message.audio.file_name.replace('_',' ').replace('.mp3','')
     file_path = await bot.get_file(message.audio.file_id)
@@ -167,22 +171,24 @@ async def handle_audio(message: Message):
         if not digits_in_song:
             pattern = rf"^\s*0?({track_number if track_number else bs+'d*'})\s*(.*)\s*$"
             match = re.match(pattern, song_, re.IGNORECASE)
-            track_number, song_ = match.groups()
+            if match: track_number, song_ = match.groups()
     
         cover_ = tags.getall('APIC');                        cover_ = cover_[0].data if cover_ else None
         if cover_ and  (not cover):
-            thumbnail = Image.open(io.BytesIO(cover_))
-            thumbnail.thumbnail((128, 128))
-            thumbnail.save(thumbnail, format='JPEG')
+            image = Image.open(io.BytesIO(cover_))
+            image.thumbnail((90, 90))
+            thumbnail = io.BytesIO()
+            image.save(thumbnail, format='JPEG')
             thumbnail = thumbnail.getvalue()
+            image.close()
         if cover and cover_:
             cover_ = None
         
         tags.delete(downloaded_file)
         
-        song         = song if song else song_
+        song         = song     if song     else song_
         musician     = musician if musician else musician_
-        cover        = cover if cover else cover_
+        cover        = cover    if cover    else cover_
     
     if  (not musician) and (not song):
         # _<musician>_-_<track_number>_<song>_
@@ -191,13 +197,15 @@ async def handle_audio(message: Message):
         if not digits_in_song: pattern = r"^\s*(.*?)\s*-\s*0?(\d*)\s*(.*)\s*$"
         else:                  pattern = r"^\s*(.*?)\s*-\s*(.*)\s*$"
         
-        match = re.match(pattern, file_name, re.IGNORECASE)
+        match = re.match(pattern, file_name)
         if match:
             if not digits_in_song: musician, track_number, song = match.groups()
             else:                  musician, song = match.groups()
         else:
             # нельзя расчленить название, причем обе части неизвестны
-            await bot.reply_to(message, "Установите исполнителя или отправьте файл с названием вида: <Исполнитель> - <Композиция>. Если в одной из частей есть '-' то установите исполнителя или комопзицию в ручную")
+            if send_in_quque:
+                 message_queue[message.chat.id][message.from_user.id].remove(message.id)
+            await bot.reply_to(message, "Установите исполнителя или отправьте файл с названием вида: <Исполнитель> - <Композиция>.")
             return
     
     elif (musician or song) and not (musician and song):
@@ -205,32 +213,36 @@ async def handle_audio(message: Message):
         if not digits_in_song:
             # _<musician>_-_<album_track_number>_<song>_ или _<musician>_<album_track_number>_<song>_
             # _<track_number>_<song>_-_<musician>_ или _<track_number>_<song>_<musician>_
-            pattern = rf"^\s*({musician if musician else '.*'})\s*-?\s*0?({track_number if track_number else bs+'d*'})\s*({song if song else '.*'})\s*$"
+            pattern          = rf"^\s*({musician if musician else '.*'})\s*-?\s*0?({track_number if track_number else bs+'d*'})\s*({song if song else '.*'})\s*$"
             reversed_pattern = rf"^\s*0?({track_number if track_number else bs+'d*'})\s*({song if song else '.*'})\s*-?\s*({musician if musician else '.*'})\s*$"
         else:
             # _<musician>_-_<song>_ или _<musician>_<song>_
             # _<song>_-_<musician>_ или _<song>_<musician>_
-            pattern = rf"^\s*({musician if musician else '.*'})\s*-?\s*({song if song else '.*'})\s*$"
+            pattern          = rf"^\s*({musician if musician else '.*'})\s*-?\s*({song if song else '.*'})\s*$"
             reversed_pattern = rf"^\s*({song if song else '.*'})\s*-?\s*({musician if musician else '.*'})\s*$"
         
         match = re.match(pattern, file_name, re.IGNORECASE)
         reversed_match = re.match(reversed_pattern, file_name, re.IGNORECASE)
-        if match:
-            if not digits_in_song: musician, track_number, song = match.groups()
-            else:                  musician, song = match.groups()
-        elif reversed_match:
-            if not digits_in_song: track_number, song, musician  = match.groups()
-            else:                  song, musician  = match.groups()
+        
+        if match or reversed_match:
+            if match:
+                if not digits_in_song: musician_, track_number_, song_ = match.groups()
+                else:                  musician_, song_                = match.groups()
+            elif reversed_match:
+                if not digits_in_song: track_number_, song_, musician_ = match.groups()
+                else:                  song_, musician_                = match.groups
             
         elif file_name.count('-') > 0:
             # указываемое название не совпало с названием из файла
-            m,s = file_name.split('-',1)
-            musician = musician if musician else m.strip()
-            song = song if song else s.strip()
+            musician_, song_ = file_name.split('-',1)
+            musician_, song_ = musician_.strip(), song_.strip()
         else:
             # нельзя расчленить название, поэтому неизвестная часть будет целиком названием
-            musician = musician if musician else file_name.strip()
-            song = song if song else file_name.strip()
+            musician_, song_ = file_name.strip(), file_name.strip()
+        
+        song         = song         if song         else song_
+        musician     = musician     if musician     else musician_
+        track_number = track_number if track_number else track_number_
     
     # создадим новые теги на основе имеющихся данных и заменим ими предыдущие
     tags = ID3()
@@ -253,7 +265,7 @@ async def handle_audio(message: Message):
     downloaded_file.name = f'{musician} - {song}.mp3'
     
     if send_in_quque:
-        while message.id!=message_quque[message.chat.id][message.from_user.id][0]:
+        while message.id!=message_queue[message.chat.id][message.from_user.id][0]:
             await asyncio.sleep(2)
     
     await bot.send_audio(
@@ -265,7 +277,7 @@ async def handle_audio(message: Message):
     downloaded_file.close()
     
     if send_in_quque:
-        message_quque[message.chat.id][message.from_user.id].remove(message.id)
+        message_queue[message.chat.id][message.from_user.id].remove(message.id)
     
 
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))
