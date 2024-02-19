@@ -134,11 +134,11 @@ async def handle_audio(message: Message):
         lyrics         = data.get('lyrics')
         genre          = data.get('genre')
         digits_in_song = data.get('digits_in_song') # может ли начало трека содержать число
-        send_in_quque  = data.get('send_in_quque')  # отсылать в том же порядке что и присланы
+        send_in_queue  = data.get('send_in_queue')  # отсылать в том же порядке что и присланы
         song           = data.get('song')
         if song: data['song'] = None
     
-    if send_in_quque:
+    if send_in_queue:
         # {chat:{user:[message]}}
         global message_queue
         message_queue.setdefault(message.chat.id, {}).setdefault(message.from_user.id, []).append(message.id)
@@ -203,7 +203,7 @@ async def handle_audio(message: Message):
             else:                  musician, song = match.groups()
         else:
             # нельзя расчленить название, причем обе части неизвестны
-            if send_in_quque:
+            if send_in_queue:
                  message_queue[message.chat.id][message.from_user.id].remove(message.id)
             await bot.reply_to(message, "Установите исполнителя или отправьте файл с названием вида: <Исполнитель> - <Композиция>.")
             return
@@ -211,7 +211,7 @@ async def handle_audio(message: Message):
     elif (musician or song) and not (musician and song):
         # через название файла и извеcтную часть ищем неизвестную вторую часть
         if not digits_in_song:
-            # _<musician>_-_<album_track_number>?_<song>_ или _<musician>_<album_track_number>_<song>_
+            # _<musician>_-_<track_number>?_<song>_ или _<musician>_<album_track_number>_<song>_
             # _<track_number>_<song>_-_<musician>_ или _<track_number>?_<song>_<musician>_
             pattern          = rf"^\s*({musician if musician else '.*'})\s*-?\s*0?({track_number if track_number else bs+'d*'})?\s*({song if song else '.*'})\s*$"
             reversed_pattern = rf"^\s*0?({track_number if track_number else bs+'d*'})?\s*({song if song else '.*'})\s*-?\s*({musician if musician else '.*'})\s*$"
@@ -263,7 +263,7 @@ async def handle_audio(message: Message):
     # или среднем количестве символов в слове > 6, а вообще ни то ни другое. хз как
     downloaded_file.name = f'{musician} - {song}.mp3'
     
-    if send_in_quque:
+    if send_in_queue:
         while message.id!=message_queue[message.chat.id][message.from_user.id][0]:
             await asyncio.sleep(2)
     
@@ -275,7 +275,7 @@ async def handle_audio(message: Message):
     
     downloaded_file.close()
     
-    if send_in_quque:
+    if send_in_queue:
         message_queue[message.chat.id][message.from_user.id].remove(message.id)
     
 
