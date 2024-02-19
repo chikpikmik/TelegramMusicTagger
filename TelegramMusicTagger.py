@@ -211,10 +211,10 @@ async def handle_audio(message: Message):
     elif (musician or song) and not (musician and song):
         # через название файла и извеcтную часть ищем неизвестную вторую часть
         if not digits_in_song:
-            # _<musician>_-_<album_track_number>_<song>_ или _<musician>_<album_track_number>_<song>_
-            # _<track_number>_<song>_-_<musician>_ или _<track_number>_<song>_<musician>_
-            pattern          = rf"^\s*({musician if musician else '.*'})\s*-?\s*0?({track_number if track_number else bs+'d*'})\s*({song if song else '.*'})\s*$"
-            reversed_pattern = rf"^\s*0?({track_number if track_number else bs+'d*'})\s*({song if song else '.*'})\s*-?\s*({musician if musician else '.*'})\s*$"
+            # _<musician>_-_<album_track_number>?_<song>_ или _<musician>_<album_track_number>_<song>_
+            # _<track_number>_<song>_-_<musician>_ или _<track_number>?_<song>_<musician>_
+            pattern          = rf"^\s*({musician if musician else '.*'})\s*-?\s*0?({track_number if track_number else bs+'d*'})?\s*({song if song else '.*'})\s*$"
+            reversed_pattern = rf"^\s*0?({track_number if track_number else bs+'d*'})?\s*({song if song else '.*'})\s*-?\s*({musician if musician else '.*'})\s*$"
         else:
             # _<musician>_-_<song>_ или _<musician>_<song>_
             # _<song>_-_<musician>_ или _<song>_<musician>_
