@@ -186,9 +186,9 @@ async def handle_audio(message: Message):
         
         tags.delete(downloaded_file)
         
-        song         = song     if song     else song_
-        musician     = musician if musician else musician_
-        cover        = cover    if cover    else cover_
+        song         = song         if song         else song_
+        musician     = musician     if musician     else musician_
+        cover        = cover        if cover        else cover_
     
     if  (not musician) and (not song):
         # _<musician>_-_<track_number>_<song>_
@@ -221,16 +221,15 @@ async def handle_audio(message: Message):
             pattern          = rf"^\s*({musician if musician else '.*'})\s*-?\s*({song if song else '.*'})\s*$"
             reversed_pattern = rf"^\s*({song if song else '.*'})\s*-?\s*({musician if musician else '.*'})\s*$"
         
-        match = re.match(pattern, file_name, re.IGNORECASE)
+        match          = re.match(pattern,          file_name, re.IGNORECASE)
         reversed_match = re.match(reversed_pattern, file_name, re.IGNORECASE)
         
-        if match or reversed_match:
-            if match:
-                if not digits_in_song: musician_, track_number_, song_ = match.groups()
-                else:                  musician_, song_                = match.groups()
-            elif reversed_match:
-                if not digits_in_song: track_number_, song_, musician_ = match.groups()
-                else:                  song_, musician_                = match.groups
+        if match:
+            if not digits_in_song: musician_, track_number_, song_ = match.groups()
+            else:                  musician_, song_                = match.groups()
+        elif reversed_match:
+            if not digits_in_song: track_number_, song_, musician_ = match.groups()
+            else:                  song_, musician_                = match.groups
             
         elif file_name.count('-') > 0:
             # указываемое название не совпало с названием из файла
