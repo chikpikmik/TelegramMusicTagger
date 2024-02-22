@@ -1,21 +1,27 @@
-﻿from telebot.async_telebot import AsyncTeleBot
-from telebot.types import InputMedia, InputMediaPhoto, Message, InputMediaAudio
-from telebot.asyncio_handler_backends import State, StatesGroup
-from telebot.asyncio_storage import StateMemoryStorage
-from telebot import asyncio_filters
-from telebot.types import InputFile
+﻿from aiogram import F, Bot, Dispatcher, filters, Router
+from aiogram.types import Message, BufferedInputFile
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from mutagen.id3 import ID3, TIT2, TPE1, TPE2, TALB, TRCK, APIC, TDRL, TORY, TXXX, TBPM, TEXT, TCOM, TCON #TDRS
 from PIL import Image
 from typing import Dict, List
 
+import asyncio
+import logging
+
 import io
-import os
+import sys
 import re
 
 from setting import TOKEN
 
-bot = AsyncTeleBot(TOKEN, state_storage=StateMemoryStorage())
+
+router = Router()
+bot = Bot(token=TOKEN)
+dp = Dispatcher()
+dp.include_router(router)
 
 global message_queue
 message_queue: Dict[int, Dict[int, List[int]]] = {}
@@ -30,113 +36,115 @@ class MyStates(StatesGroup):
 # Добавить установщики/сбрасыватели всех настроек
 # обработка ошибок
 
-@bot.message_handler(commands='setcover')
-async def handle_setcover(message: Message):
-    await bot.set_state(message.from_user.id, MyStates.cover, message.chat.id)
-    await bot.reply_to(message, "Пришлите фото обложки")
+@router.message(filters.Command('setcover'))
+async def handle_setcover(message: Message, state: FSMContext):
+    await state.set_state(MyStates.cover)
+    await message.answer("Пришлите фото обложки")
 
-@bot.message_handler(state=MyStates.cover,content_types='photo')
-async def set_cover(message: Message):
+@router.message(F.photo, MyStates.cover)
+async def set_cover(message: Message, state: FSMContext):
     # TODO стирка изображений по таймеру
     big_file_info    = await bot.get_file(message.photo[-1].file_id)
     little_file_info = await bot.get_file(message.photo[0].file_id)
-    async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data['cover']     = await bot.download_file(big_file_info.file_path)
-        data['cover_id']  = big_file_info.file_id
-        data['thumbnail'] = await bot.download_file(little_file_info.file_path)
-        await bot.send_photo(message.chat.id, data['thumbnail'])
+    
+    await state.update_data(
+        cover     = (await bot.download_file(big_file_info.file_path)).getvalue(),
+        cover_id  = big_file_info.file_id,
+        thumbnail = (await bot.download_file(little_file_info.file_path)).getvalue()
+        )
 
-    await bot.reply_to(message, "Обложка сохранена")
-    await bot.set_state(message.from_user.id, "*", message.chat.id)
+    await message.answer("Обложка сохранена")
+    await state.set_state()
 
-@bot.message_handler(state=MyStates.cover)
+
+@router.message(MyStates.cover)
 async def set_cover_incorrect(message: Message):
     # TODO добавь кнопку отмены т.е. await bot.set_state(message.from_user.id, "*", message.chat.id)
-    await bot.reply_to(message, "Пришлите фото обложки, а не что то другое")
+    await message.answer("Пришлите фото обложки, а не что то другое")
 
-@bot.message_handler(commands='resetcover')
-async def reset_cover(message: Message):
-    await bot.set_state(message.from_user.id, "*", message.chat.id)
-    async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            data['cover']     = None
-            data['cover_id']  = None
-            data['thumbnail'] = None
-    await bot.reply_to(message, "Удалено")
+@router.message(filters.Command('resetcover'))
+async def reset_cover(message: Message, state: FSMContext):
+    await state.set_state()
+    await state.update_data(
+        cover     = None,
+        cover_id  = None,
+        thumbnail = None
+        )
+    await message.answer("Удалено")
 
-@bot.message_handler(commands='sendcover')
-async def handle_sendcover(message):
+@router.message(filters.Command('sendcover'))
+async def handle_sendcover(message: Message, state: FSMContext):
     # TODO обработка ситуации когда еще не было set_state
-    async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        cover_id = data.get('cover_id')
+    cover_id = (await state.get_data()).get('cover_id')
     if cover_id:
-        await bot.send_photo(message.chat.id, cover_id)
+        await message.answer_photo(cover_id)
     else:
         await bot.reply_to(message, "Обложка не задана")
 
 
 
-@bot.message_handler(commands='setmusician')
-async def handle_setmusician(message: Message):
-    await bot.reply_to(message, "Введите исполнителя")
-    await bot.set_state(message.from_user.id, MyStates.musician, message.chat.id)
+@router.message(filters.Command('setmusician'))
+async def handle_setmusician(message: Message, state: FSMContext):
+    await message.answer("Введите исполнителя")
+    await state.set_state(MyStates.musician)
 
-@bot.message_handler(state=MyStates.musician)
-async def set_musician(message: Message):
+@router.message(MyStates.musician)
+async def set_musician(message: Message, state: FSMContext):
     # TODO добавь кнопку отмены т.е. await bot.set_state(message.from_user.id, "*", message.chat.id)
-    if message.content_type == 'text':
-        async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            data['musician'] = message.text
-        await bot.set_state(message.from_user.id, "*", message.chat.id)
-        await bot.reply_to(message, "Cохранено")
+    if message.text:
+        await state.update_data(musician = message.text)
+        await state.set_state()
+        await message.answer("Cохранено")
     else:
-        await bot.reply_to(message, "Введите имя исполнителя, а не что то другое")
+        await message.answer("Введите имя исполнителя, а не что то другое")
 
-@bot.message_handler(commands='resetmusician')
-async def reset_musician(message: Message):
-    await bot.set_state(message.from_user.id, "*", message.chat.id)
-    async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            data['musician'] = None
-    await bot.reply_to(message, "Удалено")
-
+@router.message(filters.Command('resetmusician'))
+async def reset_musician(message: Message, state: FSMContext):
+    await state.set_state()
+    await state.update_data(musician = None)
+    await message.answer("Удалено")
 
 
-@bot.message_handler(commands='renamenext')
-async def handle_setnext(message: Message):
-    await bot.reply_to(message, "Введите название композиции")
-    await bot.set_state(message.from_user.id, MyStates.song, message.chat.id)
 
-@bot.message_handler(state=MyStates.song)
-async def set_next(message: Message):
-    if message.content_type == 'text':
-        async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            data['song'] = message.text
-        await bot.set_state(message.from_user.id, "*", message.chat.id)
-        await bot.reply_to(message, "а теперь саму композицию")
+@router.message(filters.Command('renamenext'))
+async def handle_setnext(message: Message, state: FSMContext):
+    await message.answer(message, "Введите название композиции")
+    await state.set_state(MyStates.song)
+
+@router.message(MyStates.song)
+async def set_next(message: Message, state: FSMContext):
+    if message.text:
+        await state.update_data(musician = message.text)
+        await state.set_state()
+        await message.answer("а теперь саму композицию")
     else:
-        await bot.reply_to(message, "Введите название композиции, а не что то другое")
+        await message.answer("Введите название композиции, а не что то другое")
 
  
  
-@bot.message_handler(content_types='audio')
-async def handle_audio(message: Message):
+@router.message(F.audio)
+async def handle_audio(message: Message, state: FSMContext):
     # TODO учет последовательности (можно добавить опцию для контроля, взамен скорость)
     # добавить сообщение которое будет говорить о загрузке /-\|/-\|
-    await bot.set_state(message.from_user.id, "*", message.chat.id)
-    async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        cover          = data.get('cover')
-        thumbnail      = data.get('thumbnail')
-        musician       = data.get('musician')
-        composer       = data.get('composer')
-        album          = data.get('album')
-        # TODO параметр автонумерации треков
-        track_number   = data.get('track_number')   # номер трека в альбоме
-        released       = data.get('released')       # год выпуска
-        lyrics         = data.get('lyrics')
-        genre          = data.get('genre')
-        digits_in_song = data.get('digits_in_song') # может ли начало трека содержать число
-        send_in_queue  = data.get('send_in_queue')  # отсылать в том же порядке что и присланы
-        song           = data.get('song')
-        if song: data['song'] = None
+    await state.set_state()
+    data = await state.get_data()
+    
+    cover          = data.get('cover')
+    thumbnail      = data.get('thumbnail')
+    musician       = data.get('musician')
+    composer       = data.get('composer')
+    album          = data.get('album')
+    # TODO параметр автонумерации треков
+    track_number   = data.get('track_number')   # номер трека в альбоме
+    released       = data.get('released')       # год выпуска
+    lyrics         = data.get('lyrics')
+    genre          = data.get('genre')
+    
+    digits_in_song = data.get('digits_in_song') # может ли начало трека содержать число
+    send_in_queue  = data.get('send_in_queue')  # отсылать в том же порядке что и присланы
+    
+    song           = data.get('song')
+    if song: data['song'] = None
     
     if send_in_queue:
         # {chat:{user:[message]}}
@@ -146,9 +154,10 @@ async def handle_audio(message: Message):
     file_name = message.audio.file_name.replace('_',' ').replace('.mp3','')
     file_path = await bot.get_file(message.audio.file_id)
     downloaded_file = await bot.download_file(file_path.file_path)
-    file_beginning = downloaded_file[:3]
     
-    downloaded_file = io.BytesIO(downloaded_file)
+    file_beginning = downloaded_file.read(3); downloaded_file.seek(0)
+    
+    #downloaded_file = io.BytesIO(downloaded_file)
     
     bs = '\\'
     
@@ -209,6 +218,7 @@ async def handle_audio(message: Message):
             return
     
     elif (musician or song) and not (musician and song):
+        # TODO учесть composer в шаблонах
         # через название файла и извеcтную часть ищем неизвестную вторую часть
         if not digits_in_song:
             # _<musician>_-_<track_number>?_<song>_ или _<musician>_<album_track_number>_<song>_
@@ -257,29 +267,30 @@ async def handle_audio(message: Message):
     if cover:        tags.add(APIC(encoding=3, mime='image/jpeg', type=3, desc=u'Cover', data=cover))
    
     tags.save(downloaded_file)
-    downloaded_file.seek(0)
+    
+    downloaded_file=downloaded_file.getvalue()
     
     #.!;%+^@$_ доступны при более чем ~40 символов, остальные схлопываются в _ как и пробелы
     # или среднем количестве символов в слове > 6, а вообще ни то ни другое. хз как
-    downloaded_file.name = f'{musician} - {song}.mp3'
     
     if send_in_queue:
         while message.id!=message_queue[message.chat.id][message.from_user.id][0]:
             await asyncio.sleep(2)
     
-    await bot.send_audio(
-        chat_id   = message.chat.id,
-        audio     = downloaded_file,
-        thumbnail = thumbnail
+    await message.answer_audio(
+        audio     = BufferedInputFile(downloaded_file, filename=f'{musician} - {song}.mp3'),
+        thumbnail = BufferedInputFile(thumbnail, filename='thumbnail')
         )
-    
-    downloaded_file.close()
     
     if send_in_queue:
         message_queue[message.chat.id][message.from_user.id].remove(message.id)
     
 
-bot.add_custom_filter(asyncio_filters.StateFilter(bot))
 
-import asyncio
-asyncio.run(bot.polling())
+async def main():
+    await dp.start_polling(bot)
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    asyncio.run(main())
