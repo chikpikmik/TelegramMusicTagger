@@ -144,7 +144,7 @@ async def handle_audio(message: Message, state: FSMContext):
     send_in_queue  = data.get('send_in_queue')  # отсылать в том же порядке что и присланы
     
     song           = data.get('song')
-    if song: data['song'] = None
+    if song: state.set_data(song = None)
     
     if send_in_queue:
         # {chat:{user:[message]}}
@@ -156,8 +156,6 @@ async def handle_audio(message: Message, state: FSMContext):
     downloaded_file = await bot.download_file(file_path.file_path)
     
     file_beginning = downloaded_file.read(3); downloaded_file.seek(0)
-    
-    #downloaded_file = io.BytesIO(downloaded_file)
     
     bs = '\\'
     
