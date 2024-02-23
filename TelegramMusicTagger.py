@@ -23,6 +23,10 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 dp.include_router(router)
 
+from aiohttp import web
+app = web.Application()
+
+
 global message_queue
 message_queue: Dict[int, Dict[int, List[int]]] = {}
 
@@ -55,7 +59,6 @@ async def set_cover(message: Message, state: FSMContext):
 
     await message.answer("Обложка сохранена")
     await state.set_state()
-
 
 @router.message(MyStates.cover)
 async def set_cover_incorrect(message: Message):
@@ -108,15 +111,15 @@ async def reset_musician(message: Message, state: FSMContext):
 
 @router.message(filters.Command('renamenext'))
 async def handle_setnext(message: Message, state: FSMContext):
-    await message.answer(message, "Введите название композиции")
+    await message.answer("Введите название композиции")
     await state.set_state(MyStates.song)
 
 @router.message(MyStates.song)
 async def set_next(message: Message, state: FSMContext):
     if message.text:
-        await state.update_data(musician = message.text)
+        await state.update_data(song = message.text)
         await state.set_state()
-        await message.answer("а теперь саму композицию")
+        await message.answer("следующая композиция будет так называться, или повторите команду для сброса")
     else:
         await message.answer("Введите название композиции, а не что то другое")
 
@@ -144,7 +147,7 @@ async def handle_audio(message: Message, state: FSMContext):
     send_in_queue  = data.get('send_in_queue')  # отсылать в том же порядке что и присланы
     
     song           = data.get('song')
-    if song: state.set_data(song = None)
+    if song: await state.update_data(song = None)
     
     if send_in_queue:
         # {chat:{user:[message]}}
@@ -285,10 +288,42 @@ async def handle_audio(message: Message, state: FSMContext):
     
 
 
-async def main():
-    await dp.start_polling(bot)
+
+
+WEB_SERVER_HOST = "127.0.0.1"
+WEB_SERVER_PORT = 8080
+
+WEBHOOK_PATH = "/webhook" # may be api to secure and multi bot handling
+WEBHOOK_SECRET = "my-secret" # anything
+
+# ssh -R 80:127.0.0.1:8080 serveo.net
+
+BASE_WEBHOOK_URL = "https://58db04c6c74c7754424e0ffc005ce366.serveo.net" # webhook url
+
+
+async def on_startup(bot: Bot) -> None:
+    await bot.set_webhook(f"{BASE_WEBHOOK_URL}{WEBHOOK_PATH}", secret_token=WEBHOOK_SECRET)
+    
+    
+
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+def main():
+    dp.startup.register(on_startup)
+    
+    webhook_requests_handler = SimpleRequestHandler(
+        dispatcher=dp,
+        bot=bot,
+        secret_token=WEBHOOK_SECRET,
+    )
+    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+
+    setup_application(app, dp, bot=bot)
+
+    web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
+    #await dp.start_polling(bot)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    asyncio.run(main())
+    main()
+    #asyncio.run(main())
