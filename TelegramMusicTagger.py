@@ -1,5 +1,5 @@
 ﻿from aiogram import F, Bot, Dispatcher, filters, Router
-from aiogram.types import Message, BufferedInputFile
+from aiogram.types import Message, BufferedInputFile, FSInputFile
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -15,8 +15,7 @@ import io
 import sys
 import re
 
-from setting import TOKEN
-
+from setting import TOKEN, PUBLIC_SERVER_DOMAIN, PRIVATE_SERVER_HOST, PRIVATE_SERVER_PORT 
 
 router = Router()
 bot = Bot(token=TOKEN)
@@ -288,24 +287,19 @@ async def handle_audio(message: Message, state: FSMContext):
     
 
 
-
-
-WEB_SERVER_HOST = "127.0.0.1"
-WEB_SERVER_PORT = 8080
-
 WEBHOOK_PATH = "/webhook" # may be api to secure and multi bot handling
-WEBHOOK_SECRET = "my-secret" # anything
+WEBHOOK_SECRET = "i-love-boobs"
 
-# ssh -R 80:127.0.0.1:8080 serveo.net
-
-BASE_WEBHOOK_URL = "https://58db04c6c74c7754424e0ffc005ce366.serveo.net" # webhook url
+BASE_WEBHOOK_URL = f"https://{PUBLIC_SERVER_DOMAIN}{WEBHOOK_PATH}" # webhook url
 
 
 async def on_startup(bot: Bot) -> None:
-    await bot.set_webhook(f"{BASE_WEBHOOK_URL}{WEBHOOK_PATH}", secret_token=WEBHOOK_SECRET)
+    await bot.set_webhook(
+            url=BASE_WEBHOOK_URL, 
+            secret_token=WEBHOOK_SECRET
+            )
     
     
-
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 def main():
     dp.startup.register(on_startup)
@@ -319,11 +313,12 @@ def main():
 
     setup_application(app, dp, bot=bot)
 
-    web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
-    #await dp.start_polling(bot)
-
+    web.run_app(
+            app=app, 
+            host=PRIVATE_SERVER_HOST, 
+            port=PRIVATE_SERVER_PORT,
+            )
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     main()
-    #asyncio.run(main())
