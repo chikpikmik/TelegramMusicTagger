@@ -15,11 +15,11 @@ TOKEN = os.getenv("TOKEN")
 
 PUBLIC_SERVER_DOMAIN = "telegrammusictagger.onrender.com"
 PRIVATE_SERVER_HOST = "0.0.0.0"
-PRIVATE_SERVER_PORT = 80
+PRIVATE_SERVER_PORT = 10000 
 
 
 #WEB_SERVER_HOST = "35.160.120.126"
-WEB_SERVER_PORT = 80
+#WEB_SERVER_PORT = 443
 
 
 WEBHOOK_PATH = "/webhook" # may be api to secure and multi bot handling
