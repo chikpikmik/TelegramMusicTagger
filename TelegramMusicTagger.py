@@ -289,16 +289,19 @@ async def handle_audio(message: Message, state: FSMContext):
 
 
 
+# -----------------------------------
+# 35.160.120.126
+# 44.233.151.27
+# 34.211.200.85
+# https://telegrammusictagger.onrender.com
 
-WEB_SERVER_HOST = "127.0.0.1"
-WEB_SERVER_PORT = 8080
+WEB_SERVER_HOST = "telegrammusictagger.onrender.com"
+WEB_SERVER_PORT = 80
 
 WEBHOOK_PATH = "/webhook" # may be api to secure and multi bot handling
 WEBHOOK_SECRET = "my-secret" # anything
 
-# ssh -R 80:127.0.0.1:8080 serveo.net
-
-BASE_WEBHOOK_URL = "https://58db04c6c74c7754424e0ffc005ce366.serveo.net" # webhook url
+BASE_WEBHOOK_URL = f"https://{WEB_SERVER_HOST}"  # webhook url
 
 
 async def on_startup(bot: Bot) -> None:
