@@ -15,7 +15,7 @@ import io
 import sys
 import re
 
-from setting import TOKEN, PUBLIC_SERVER_DOMAIN, PRIVATE_SERVER_HOST, PRIVATE_SERVER_PORT 
+from setting import TOKEN, PRIVATE_SERVER_HOST, PRIVATE_SERVER_PORT, WEBHOOK_PATH, WEBHOOK_SECRET, BASE_WEBHOOK_URL
 
 router = Router()
 bot = Bot(token=TOKEN)
@@ -288,19 +288,6 @@ async def handle_audio(message: Message, state: FSMContext):
 
 
 
-# -----------------------------------
-# 35.160.120.126
-# 44.233.151.27
-# 34.211.200.85
-# https://telegrammusictagger.onrender.com
-
-WEB_SERVER_HOST = "telegrammusictagger.onrender.com"
-WEB_SERVER_PORT = 80
-
-WEBHOOK_PATH = "/webhook" # may be api to secure and multi bot handling
-WEBHOOK_SECRET = "i-love-boobs"
-
-BASE_WEBHOOK_URL = f"https://{PUBLIC_SERVER_DOMAIN}{WEBHOOK_PATH}" # webhook url
 
 
 async def on_startup(bot: Bot) -> None:
