@@ -143,7 +143,7 @@ async def handle_audio(message: Message, state: FSMContext):
     genre          = data.get('genre')
     
     digits_in_song = data.get('digits_in_song') # может ли начало трека содержать число
-    send_in_queue  = True #data.get('send_in_queue')  # отсылать в том же порядке что и присланы
+    send_in_queue  = data.get('send_in_queue')  # отсылать в том же порядке что и присланы
     
     song           = data.get('song')
     if song: await state.update_data(song = None)
