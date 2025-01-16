@@ -6,14 +6,8 @@ load_dotenv()
 TOKEN = os.getenv("TOKEN")
 
 
-# -----------------------------------
-# 35.160.120.126
-# 44.233.151.27
-# 34.211.200.85
-# https://telegrammusictagger.onrender.com
-
-
 PUBLIC_SERVER_DOMAIN = "telegrammusictagger.onrender.com"
+
 PRIVATE_SERVER_HOST = "0.0.0.0"
 PRIVATE_SERVER_PORT = 10000 
 
@@ -22,7 +16,7 @@ PRIVATE_SERVER_PORT = 10000
 #WEB_SERVER_PORT = 443
 
 
-WEBHOOK_PATH = "/webhook" # may be api to secure and multi bot handling
+WEBHOOK_PATH = "/webhook"
 WEBHOOK_SECRET = "i-love-boobs"
 
 BASE_WEBHOOK_URL = f"https://{PUBLIC_SERVER_DOMAIN}{WEBHOOK_PATH}" # webhook url
