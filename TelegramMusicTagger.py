@@ -274,7 +274,7 @@ async def handle_audio(message: Message, state: FSMContext):
     # или среднем количестве символов в слове > 6, а вообще ни то ни другое. хз как
     
     if send_in_queue:
-        while message.id!=message_queue[message.chat.id][message.from_user.id][0]:
+        while message.message_id!=message_queue[message.chat.id][message.from_user.id][0]:
             await asyncio.sleep(2)
     
     await message.answer_audio(
