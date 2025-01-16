@@ -143,7 +143,7 @@ async def handle_audio(message: Message, state: FSMContext):
     genre          = data.get('genre')
     
     digits_in_song = data.get('digits_in_song') # может ли начало трека содержать число
-    send_in_queue  = data.get('send_in_queue')  # отсылать в том же порядке что и присланы
+    send_in_queue  = True #data.get('send_in_queue')  # отсылать в том же порядке что и присланы
     
     song           = data.get('song')
     if song: await state.update_data(song = None)
@@ -151,7 +151,7 @@ async def handle_audio(message: Message, state: FSMContext):
     if send_in_queue:
         # {chat:{user:[message]}}
         global message_queue
-        message_queue.setdefault(message.chat.id, {}).setdefault(message.from_user.id, []).append(message.id)
+        message_queue.setdefault(message.chat.id, {}).setdefault(message.from_user.id, []).append(message.message_id)
         
     file_name = message.audio.file_name.replace('_',' ').replace('.mp3','')
     file_path = await bot.get_file(message.audio.file_id)
@@ -213,7 +213,7 @@ async def handle_audio(message: Message, state: FSMContext):
         else:
             # нельзя расчленить название, причем обе части неизвестны
             if send_in_queue:
-                 message_queue[message.chat.id][message.from_user.id].remove(message.id)
+                 message_queue[message.chat.id][message.from_user.id].remove(message.message_id)
             await bot.reply_to(message, "Установите исполнителя или отправьте файл с названием вида: <Исполнитель> - <Композиция>.")
             return
     
@@ -283,7 +283,7 @@ async def handle_audio(message: Message, state: FSMContext):
         )
     
     if send_in_queue:
-        message_queue[message.chat.id][message.from_user.id].remove(message.id)
+        message_queue[message.chat.id][message.from_user.id].remove(message.message_id)
     
 
 
