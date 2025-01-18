@@ -20,3 +20,5 @@ WEBHOOK_PATH = "/webhook"
 WEBHOOK_SECRET = "i-love-boobs"
 
 BASE_WEBHOOK_URL = f"https://{PUBLIC_SERVER_DOMAIN}{WEBHOOK_PATH}" # webhook url
+
+USE_WEBHOOK = True #os.getenv("USE_WEBHOOK") == "True"
