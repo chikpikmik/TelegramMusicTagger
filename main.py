@@ -9,24 +9,19 @@ from handlers import dp
 from bot import bot
 
 
-# Webhook startup handler
-async def on_startup(bot: Bot) -> None:
-    logging.info(f"Setting up webhook for bot: {bot}")
-    await bot.set_webhook(
-        url=BASE_WEBHOOK_URL,
-        secret_token=WEBHOOK_SECRET
-    )
-    logging.info(f"Webhook set at: {BASE_WEBHOOK_URL}")
-
-# Polling handler
-async def on_shutdown(dp: Dispatcher) -> None:
-    logging.info("Shutting down...")
-    await dp.storage.close()
-    await dp.storage.wait_closed()
-
 def webhook_main():
     from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
     from aiohttp import web
+
+    # Webhook startup handler
+    async def on_startup(bot: Bot) -> None:
+        logging.info(f"Setting up webhook for bot: {bot}")
+        await bot.set_webhook(
+            url=BASE_WEBHOOK_URL,
+            secret_token=WEBHOOK_SECRET
+        )
+        logging.info(f"Webhook set at: {BASE_WEBHOOK_URL}")
+
 
     app = web.Application()
     
@@ -52,6 +47,8 @@ async def polling_main():
     logging.info(f"Running app with polling.")
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
+
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)

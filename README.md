@@ -1,22 +1,6 @@
+
 # TelegramMusicTagger
-
-python -m venv venv
-
-### Windows
-.\venv\Scripts\activate
-
-### Linux/macOS
-source venv/bin/activate
-
-pip install -r requirements.txt
-
-python main.py
-
-
-
-tree -I "venv|__pycache__|.vs|env|.gitattributes|.gitignore"
-
-.\
+\
 ├── handlers\
 │   ├── __init__.py\
 │   ├── audio.py\
@@ -35,3 +19,21 @@ tree -I "venv|__pycache__|.vs|env|.gitattributes|.gitignore"
 ├── bot.py\
 ├── my_states.py\
 └── setting.py\
+
+
+
+python -m venv venv
+
+### Windows
+.\venv\Scripts\activate
+
+### Linux/macOS
+source venv/bin/activate
+
+pip install -r requirements.txt
+
+python main.py
+
+
+
+tree -I "venv|__pycache__|.vs|env|.gitattributes|.gitignore"
