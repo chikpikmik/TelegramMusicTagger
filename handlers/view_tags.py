@@ -9,7 +9,7 @@ from services import download_file_BytesIo, AudioID3
 router = Router()
 
 
-@router.message(filters.Command('view_tags'))
+@router.message(filters.Command('viewtags'))
 async def handle_set_view_tags(message: Message, state: FSMContext):
     await state.set_state(MyStates.view_tags)
     await message.answer("Установлен режим просмотра тегов")
@@ -47,7 +47,7 @@ async def audio_view_tags(message: Message, state: FSMContext):
 
 
 
-@router.message(filters.Command('reset_view_tags'))
+@router.message(filters.Command('resetviewtags'))
 async def reset_musician(message: Message, state: FSMContext):
     await state.set_state()
     await state.update_data(view_tags = None)
