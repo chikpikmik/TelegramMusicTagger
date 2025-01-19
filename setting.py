@@ -17,8 +17,8 @@ PRIVATE_SERVER_PORT = 10000
 
 
 WEBHOOK_PATH = "/webhook"
-WEBHOOK_SECRET = "i-love-boobs"
+WEBHOOK_SECRET = "i-love-boobs" #os.getenv("WEBHOOK_SECRET")
 
 BASE_WEBHOOK_URL = f"https://{PUBLIC_SERVER_DOMAIN}{WEBHOOK_PATH}" # webhook url
 
-USE_WEBHOOK = True #os.getenv("USE_WEBHOOK") == "True"
+USE_WEBHOOK = False #os.getenv("USE_WEBHOOK") == "True"

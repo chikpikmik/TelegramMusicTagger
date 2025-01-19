@@ -5,3 +5,4 @@ class MyStates(StatesGroup):
     musician  = State()
     song = State()
     audios = State()
+    view_tags = State()

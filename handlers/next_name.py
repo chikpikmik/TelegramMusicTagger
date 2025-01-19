@@ -14,7 +14,7 @@ async def handle_setnext(message: Message, state: FSMContext):
         await message.answer("Cброшено")
         return
 
-    await message.answer("Введите название следующей композиции. Для сброса: /renamenext")
+    await message.answer(f"Введите название следующей композиции.\nДля сброса: /renamenext")
     await state.set_state(MyStates.song)
 
 @router.message(MyStates.song)
@@ -22,7 +22,7 @@ async def set_next(message: Message, state: FSMContext):
     if message.text:
         await state.update_data(song = message.text)
         await state.set_state()
-        await message.answer("Название установлено. Для сброса: /renamenext")
+        await message.answer("Название установлено.\nДля сброса: /renamenext")
     else:
         await message.answer("Введите название композиции, а не что то другое")
 
