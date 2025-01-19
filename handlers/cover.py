@@ -3,10 +3,11 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 from my_states import MyStates
-from services.file_service import download_file_BytesIo, download_file_bytes
+from services.file_service import download_file_bytes
 
 router = Router()
 
+#TODO режим удаления обложек с аудио
 
 @router.message(filters.Command('setcover'))
 async def handle_setcover(message: Message, state: FSMContext):
