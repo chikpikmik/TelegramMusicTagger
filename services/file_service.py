@@ -1,11 +1,11 @@
 import logging
-
-from bot import bot
 from io import BytesIO
+
 from aiogram.exceptions import TelegramBadRequest
 
 
 async def download_file_BytesIo(file_id: str) -> BytesIO:
+    from bot import bot  # ленивый импорт — избегаем круговой зависимости
     try:
         file = await bot.get_file(file_id)
         buffer = BytesIO()
