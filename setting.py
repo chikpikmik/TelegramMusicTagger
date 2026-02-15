@@ -5,6 +5,12 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
 
+# Local Bot API Server (снимает лимит 20 МБ на загрузку файлов)
+# См. docs/LOCAL_BOT_API_SERVER.md
+USE_LOCAL_BOT_API = os.getenv("USE_LOCAL_BOT_API", "false").lower() == "true"
+LOCAL_BOT_API_BASE = os.getenv("LOCAL_BOT_API_BASE", "http://localhost:8081")
+
+
 
 PUBLIC_SERVER_DOMAIN = "telegrammusictagger.onrender.com"
 

@@ -1,6 +1,7 @@
 from aiogram import Router, filters, F
 from aiogram.types import Message, BufferedInputFile
 from aiogram.fsm.context import FSMContext
+from aiogram.exceptions import TelegramBadRequest
 from my_states import MyStates
 
 from services import download_file_BytesIo, AudioID3
@@ -17,8 +18,16 @@ async def handle_set_view_tags(message: Message, state: FSMContext):
 @router.message(F.audio, MyStates.view_tags)
 async def audio_view_tags(message: Message, state: FSMContext):
     
-    downloaded_file = await download_file_BytesIo(message.audio.file_id)
-    
+    try:
+        downloaded_file = await download_file_BytesIo(message.audio.file_id)
+    except TelegramBadRequest as e:
+        if "too big" in str(e).lower():
+            await message.answer(
+                "Файл слишком большой. Telegram не даёт боту загружать файлы больше 20 МБ."
+            )
+            return
+        raise
+
     audio = AudioID3(downloaded_file)
 
 

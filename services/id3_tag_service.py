@@ -65,7 +65,7 @@ class AudioID3:
         self.track_number   = self.get_tag('TRCK')
         self.composer       = self.get_tag('TCOM')
         self.song           = self.get_tag('TIT2')
-        self.lyrics         = self.get_tag('TXXX', 'SYLT', 'USLT,' 'TSST', 'TIT3')
+        self.lyrics         = self.get_tag('TXXX', 'SYLT', 'USLT', 'TSST', 'TIT3')
         self.cover_image    = None
         self.cover_image    = self.get_cover()
 

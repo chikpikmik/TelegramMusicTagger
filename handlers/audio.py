@@ -1,6 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import Message, BufferedInputFile
 from aiogram.fsm.context import FSMContext
+from aiogram.exceptions import TelegramBadRequest
 from services import download_file_BytesIo, AudioID3, MessageQueue, extract_audio_info
 import asyncio
 
@@ -20,10 +21,21 @@ async def handle_audio(message: Message, state: FSMContext):
 
     if send_in_queue: message_queue.add_message(message.chat.id, message.from_user.id, message.message_id)
 
-        
+
     file_name = message.audio.file_name.replace('_',' ').replace('.mp3','')
-    downloaded_file = await download_file_BytesIo(message.audio.file_id)
     
+    try:
+        downloaded_file = await download_file_BytesIo(message.audio.file_id)
+    except TelegramBadRequest as e:
+        if "too big" in str(e).lower():
+            message_queue.remove_next_message(message.chat.id, message.from_user.id)
+            await message.answer(
+                "Файл слишком большой. Telegram не даёт боту загружать файлы больше 20 МБ. "
+                "Сожмите аудио или отправьте более короткий трек."
+            )
+            return
+        raise
+
     #if AudioID3.isItID3(downloaded_file): 
     audio = AudioID3(downloaded_file)
 
@@ -58,7 +70,7 @@ async def handle_audio(message: Message, state: FSMContext):
     # Если данные не удалось извлечь, отправляем запрос пользователю
     if not musician or not song:
         message_queue.remove_next_message(message.chat.id, message.from_user.id)
-        await message.answer(message, "Установите исполнителя или отправьте файл с названием вида: <Исполнитель> - <Композиция>.")
+        await message.answer("Установите исполнителя или отправьте файл с названием вида: <Исполнитель> - <Композиция>.")
         return
 
     audio.update_tags(song, musician, album, genre, released, composer, track_number, lyrics, cover)
